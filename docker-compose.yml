@@ -1,0 +1,37 @@
+version: '3.4'
+
+services:
+
+  sampleapi:
+    image: sampleapi:latest
+    build:
+      context: .
+      dockerfile: src/services/SampleApi/Dockerfile
+    container_name: sampleapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ServiceConfig__serviceDiscoveryAddress=http://consul:8500
+      - ServiceConfig__serviceAddress=http://sampleapi:80
+      - ServiceConfig__serviceName=sampleapi
+      - ServiceConfig__serviceId=sampleapi-v1
+    ports:
+      - "7081:80"
+
+  api.gateway:
+    image: apigateway:latest
+    build:
+      context: .
+      dockerfile: src/gateways/ApiGateway/Dockerfile
+    container_name: apigateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=development
+    ports:
+      - "7080:80"
+
+  consul:
+    image: hashicorp/consul:latest
+    command: consul agent -dev -log-level=warn -ui -client=0.0.0.0
+    hostname: consul
+    container_name: consul
+    ports:
+      - "8500:8500"

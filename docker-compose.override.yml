@@ -1,0 +1,23 @@
+version: '3.4'
+
+services:
+ 
+  sampleapi:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ServiceConfig__serviceDiscoveryAddress=http://consul:8500
+      - ServiceConfig__serviceAddress=http://sampleapi:80
+      - ServiceConfig__serviceName=sampleapi
+      - ServiceConfig__serviceId=sampleapi-v1
+    ports:
+      - "80"
+      
+  api.gateway:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "80:80"
+  
+  consul:
+    ports:
+      - "8500"
