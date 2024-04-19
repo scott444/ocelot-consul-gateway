@@ -7,7 +7,7 @@ namespace Infrastructure.ServiceDiscovery
 {
     public static class ServiceDiscoveryExtensions
     {
-        public static void RegisterConsulServices(this IServiceCollection services, ServiceConfig serviceConfig)
+        public static void AddConsul(this IServiceCollection services, ServiceConfig serviceConfig)
         {
             ArgumentNullException.ThrowIfNull(serviceConfig);
 
@@ -22,7 +22,7 @@ namespace Infrastructure.ServiceDiscovery
         {
             return new ConsulClient(config =>
             {
-                config.Address = serviceConfig.ServiceDiscoveryAddress;
+                config.Address = serviceConfig.DiscoveryAddress;
             });
         }
     }

@@ -14,10 +14,12 @@ public static class ServiceConfigExtensions
 
         var serviceConfig = new ServiceConfig
         {
-            ServiceDiscoveryAddress = configuration.GetValue<Uri>("ServiceConfig:serviceDiscoveryAddress"),
-            ServiceAddress = configuration.GetValue<Uri>("ServiceConfig:serviceAddress"),
-            ServiceName = configuration.GetValue<string>("ServiceConfig:serviceName"),
-            ServiceId = configuration.GetValue<string>("ServiceConfig:serviceId")
+            Id = configuration.GetValue<string>("ServiceConfig:serviceId"),
+            Name = configuration.GetValue<string>("ServiceConfig:serviceName"),
+            DiscoveryAddress = configuration.GetValue<Uri>("ServiceConfig:serviceDiscoveryAddress"),
+            Address = configuration.GetValue<Uri>("ServiceConfig:serviceAddress"),
+            Port = configuration.GetValue<int>("ServiceConfig:vPort"),
+            HealthCheckEndPoint = configuration.GetValue<string>("ServiceConfig:HealthCheckEndPoint"),
         };
 
         return serviceConfig;

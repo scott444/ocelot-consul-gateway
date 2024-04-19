@@ -1,33 +1,7 @@
 version: '3.4'
 
 services:
-
-  sampleapi:
-    image: sampleapi:latest
-    build:
-      context: .
-      dockerfile: src/services/SampleApi/Dockerfile
-    container_name: sampleapi
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ServiceConfig__serviceDiscoveryAddress=http://consul:8500
-      - ServiceConfig__serviceAddress=http://sampleapi:80
-      - ServiceConfig__serviceName=sampleapi
-      - ServiceConfig__serviceId=sampleapi-v1
-    ports:
-      - "7081:80"
-
-  api.gateway:
-    image: apigateway:latest
-    build:
-      context: .
-      dockerfile: src/gateways/ApiGateway/Dockerfile
-    container_name: apigateway
-    environment:
-      - ASPNETCORE_ENVIRONMENT=development
-    ports:
-      - "7080:80"
-
+  
   consul:
     image: hashicorp/consul:latest
     command: consul agent -dev -log-level=warn -ui -client=0.0.0.0
@@ -35,3 +9,40 @@ services:
     container_name: consul
     ports:
       - "8500:8500"
+
+  sampleapi:
+    image: sampleapi:latest
+    build:
+      context: .
+      dockerfile: src/services/SampleApi/Dockerfile
+    container_name: sampleapi
+    restart: on-failure
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ServiceConfig__Id=sampleapi.OpenApi-9100
+      - ServiceConfig__Name=sampleapi
+      - ServiceConfig__DiscoveryAddress=http://consul:8500
+      - ServiceConfig__Address=http://sampleapi:80
+      - ServiceConfig__Port=80
+      - ServiceConfig__HealthCheckEndPoint=healthcheck
+    ports:
+      - "7081:80"
+    depends_on:
+      - consul
+
+  api.gateway:
+    image: apigateway:latest
+    build:
+      context: .
+      dockerfile: src/gateways/ApiGateway/Dockerfile
+    container_name: apigateway
+    restart: on-failure
+    environment:
+      - ASPNETCORE_ENVIRONMENT=development
+    ports:
+      - "7080:80"
+    depends_on:
+      - consul
+      - sampleapi
+
+ 

@@ -5,11 +5,11 @@ EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /
-COPY ["./src/services/SampleAPI/SampleAPI.csproj", "/src/services/SampleAPI/"]
-RUN dotnet restore "/src/services/SampleAPI/SampleAPI.csproj"
+WORKDIR /src
+COPY ["src/services/SampleAPI/SampleAPI.csproj", "src/services/SampleAPI/"]
+RUN dotnet restore "src/services/SampleAPI/SampleAPI.csproj"
 COPY .  .
-WORKDIR "/src/services/SampleAPI/"
+WORKDIR "/src/src/services/SampleAPI/"
 RUN dotnet build "SampleAPI.csproj" -c Release -o /app/build
 
 FROM build AS publish

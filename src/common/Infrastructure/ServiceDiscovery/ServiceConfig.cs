@@ -4,9 +4,11 @@ namespace Infrastructure.ServiceDiscovery
 {
     public class ServiceConfig
     {
-        public Uri ServiceDiscoveryAddress { get; set; }
-        public Uri ServiceAddress { get; set; }
-        public string ServiceName { get; set; }
-        public string ServiceId { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public Uri DiscoveryAddress { get; set; }
+        public Uri Address { get; set; }
+        public int Port { get; set; }
+        public string HealthCheckEndPoint { get; set; }
     }
 }

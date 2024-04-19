@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Consul;
@@ -13,23 +14,31 @@ namespace Infrastructure.ServiceDiscovery
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _registrationId = $"{_config.ServiceName}-{_config.ServiceId}";
+            _registrationId = $"{_config.Name}-{_config.Id}";
 
             var registration = new AgentServiceRegistration
             {
                 ID = _registrationId,
-                Name = _config.ServiceName,
-                Address = _config.ServiceAddress.Host,
-                Port = _config.ServiceAddress.Port
+                Name = _config.Name,
+                Address = _config.Address.Host,
+                Port = _config.Port,
+                Check = new AgentServiceCheck
+                {
+//                    HTTP = _config.HealthCheckEndPoint,
+                    HTTP = $"http://{_config.Address}:{_config.Port}/api/values/{_config.HealthCheckEndPoint}",
+                    Interval = TimeSpan.FromSeconds(15),
+                    Timeout = TimeSpan.FromSeconds(5),
+                    DeregisterCriticalServiceAfter = TimeSpan.FromSeconds(5)
+                }
             };
 
-            await _client.Agent.ServiceDeregister(registration.ID, cancellationToken);
-            await _client.Agent.ServiceRegister(registration, cancellationToken);
+            await _client.Agent.ServiceDeregister(registration.ID, cancellationToken).ConfigureAwait(false);
+            await _client.Agent.ServiceRegister(registration, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await _client.Agent.ServiceDeregister(_registrationId, cancellationToken);
+            await _client.Agent.ServiceDeregister(_registrationId, cancellationToken).ConfigureAwait(false);
         }
     }
 }
