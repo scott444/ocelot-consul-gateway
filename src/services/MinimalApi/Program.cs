@@ -3,7 +3,9 @@ using Asp.Versioning.Builder;
 using Carter;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using MinimalApi;
 using MinimalApi.Database;
+using MinimalApi.Extensions;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates.Themes;
@@ -39,6 +41,13 @@ try
 
     // Add services to the container.
     builder.Services.AddSerilog();
+
+    // Service Discovery
+    //builder.Services.AddConsulConfig(configKey: ""); ;
+    IConfigurationSection section = builder.Configuration.GetSection("ConsulConfig");
+    builder.Services.Configure<ConsulConfig>(section);
+
+    builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
     builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("Database")));
 
@@ -92,6 +101,8 @@ try
     app.UseHttpsRedirection();
 
     //app.UseAuthorization();    
+    //ConsulRegistration.RegisterService(app);
+    app.RegisterConsulService();
 
     await app.RunAsync();
 
