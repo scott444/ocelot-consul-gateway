@@ -4,7 +4,6 @@ using Carter;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using MinimalApi.Database;
-using MinimalApi.Model;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates.Themes;
@@ -41,8 +40,6 @@ try
     // Add services to the container.
     builder.Services.AddSerilog();
 
-    builder.Services.AddValidatorsFromAssemblyContaining<CustomerValidator>();
-
     builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("Database")));
 
     //builder.Services.AddControllers();
@@ -50,20 +47,24 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
-    builder.Services.AddApiVersioning(options =>
+    builder.Services
+        .AddApiVersioning(options =>
     {
-        options.DefaultApiVersion = new ApiVersion(1);
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.ReportApiVersions = true;
+        options.AssumeDefaultVersionWhenUnspecified = true;
         options.ApiVersionReader = new UrlSegmentApiVersionReader();
-    }).AddApiExplorer(options =>
+    })
+        .AddApiExplorer(options =>
     {
         options.GroupNameFormat = "'v'V";
         options.SubstituteApiVersionInUrl = true;
     });
+
     var assembly = typeof(Program).Assembly;
 
     builder.Services.AddCarter();
     builder.Services.AddMediatR(config => config.RegisterServicesFromAssembly(assembly));
-
     builder.Services.AddValidatorsFromAssembly(assembly);
 
     await using WebApplication app = builder.Build();
@@ -93,6 +94,7 @@ try
     //app.UseAuthorization();    
 
     await app.RunAsync();
+
     return 0;
 }
 catch (Exception ex)
