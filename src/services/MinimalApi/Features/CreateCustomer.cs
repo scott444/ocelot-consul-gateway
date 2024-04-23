@@ -52,9 +52,8 @@ public static class CreateCustomer
             return customer.Id;
         }
     }
-
-
 }
+
 public class CreateCustomerEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
