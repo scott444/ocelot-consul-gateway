@@ -1,10 +1,9 @@
 using Carter;
 using MediatR;
 using MinimalApi.Contracts;
-using MinimalApi.Database;
 using MinimalApi.Shared;
 
-namespace MinimalApi.Features;
+namespace MinimalApi.Features.Weather;
 
 public static class GetWeather
 {
@@ -17,8 +16,7 @@ public static class GetWeather
     {
     }
 
-
-    internal sealed class Handler(ApplicationDbContext dbContext) : IRequestHandler<Query, Result<WeatherResponse>>
+    internal sealed class Handler : IRequestHandler<Query, Result<WeatherResponse>>
     {
 
         public async Task<Result<WeatherResponse>> Handle(Query request, CancellationToken cancellationToken)

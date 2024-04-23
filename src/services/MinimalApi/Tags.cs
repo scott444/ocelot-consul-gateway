@@ -1,6 +1,6 @@
 ﻿namespace MinimalApi;
 
-public class Tags
+public static class Tags
 {
     public static string Customer => "Customer";
 

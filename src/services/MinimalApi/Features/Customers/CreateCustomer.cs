@@ -7,7 +7,7 @@ using MinimalApi.Database;
 using MinimalApi.Entities;
 using MinimalApi.Shared;
 
-namespace MinimalApi.Features;
+namespace MinimalApi.Features.Customers;
 
 public static class CreateCustomer
 {

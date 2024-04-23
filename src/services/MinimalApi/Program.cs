@@ -4,14 +4,12 @@ using Carter;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using MinimalApi.Database;
-using MinimalApi.Extensions;
 using MinimalApi.Model;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates.Themes;
 using SerilogTracing;
 using SerilogTracing.Expressions;
-using System.Reflection;
 
 // https://nblumhardt.com/2024/04/serilog-net8-0-minimal/
 // https://www.meziantou.net/creating-ico-files-from-multiple-images-in-dotnet.htm
@@ -42,7 +40,7 @@ try
 
     // Add services to the container.
     builder.Services.AddSerilog();
-    builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
+
     builder.Services.AddValidatorsFromAssemblyContaining<CustomerValidator>();
 
     builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("Database")));
@@ -78,8 +76,6 @@ try
     RouteGroupBuilder versionedGroup = app
         .MapGroup("api/v{version:apiVersion}")
         .WithApiVersionSet(apiVersionSet);
-
-    app.MapEndpoints(versionedGroup);
 
     app.MapGet("/", () => "Hello World!");
 

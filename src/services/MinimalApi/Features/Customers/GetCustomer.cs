@@ -5,7 +5,7 @@ using MinimalApi.Contracts;
 using MinimalApi.Database;
 using MinimalApi.Shared;
 
-namespace MinimalApi.Features;
+namespace MinimalApi.Features.Customers;
 
 
 public static class GetCustomer
