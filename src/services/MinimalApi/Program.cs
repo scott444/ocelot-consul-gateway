@@ -1,11 +1,12 @@
 using Asp.Versioning;
 using Asp.Versioning.Builder;
 using Carter;
+using Consul;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using MinimalApi;
 using MinimalApi.Database;
 using MinimalApi.Extensions;
+using MinimalApi.Infrastructure;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates.Themes;
@@ -18,6 +19,8 @@ using SerilogTracing.Expressions;
 // https://medium.com/@malarsharmila/introduction-to-net-aspire-a-beginners-guide-to-getting-started-7887bfb1d13a
 // https://medium.com/@malarsharmila/minimal-apis-with-filters-in-net-188afffce40a
 // https://code-maze.com/aspnetcore-api-versioning/
+// https://www.codeproject.com/Articles/5370795/Microservices-using-ASP-NET-Core-8-Ocelot-MongoDB
+// https://cecilphillip.com/using-consul-for-health-checks-with-asp-net-core/
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft.AspNetCore.Hosting", LogEventLevel.Warning)
@@ -42,10 +45,31 @@ try
     // Add services to the container.
     builder.Services.AddSerilog();
 
+    builder.Services.AddHealthChecks();
     // Service Discovery
-    //builder.Services.AddConsulConfig(configKey: ""); ;
-    IConfigurationSection section = builder.Configuration.GetSection("ConsulConfig");
-    builder.Services.Configure<ConsulConfig>(section);
+
+    //var consulConfig = builder.Configuration.GetSection("ConsulConfig").Get<ConsulConfig>();
+    //  builder.Services.AddSingleton<IHostedService, ConsulHostedService>();
+    builder.Services.Configure<ConsulConfig>(builder.Configuration.GetSection("ConsulConfig"));
+    builder.Services.AddSingleton<IConsulClient, ConsulClient>(p => new ConsulClient(consulConfig =>
+    {
+        var address = builder.Configuration["consulConfig:address"];
+        consulConfig.Address = new Uri(address);
+    }));
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("default_policy", pb =>
+        {
+            pb.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
+        });
+    });
+
+    builder.Services.AddMvc().AddJsonOptions(options =>
+    {
+        //options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+        //options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+    });
 
     builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
@@ -98,19 +122,19 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseHttpsRedirection();
-
+    //app.UseHttpsRedirection();
+    app.UseHealthChecks("/healthcheck");
     //app.UseAuthorization();    
-    //ConsulRegistration.RegisterService(app);
-    app.RegisterConsulService();
+    Log.Information("Registering to Consul");
+    app.RegisterWithConsul(app.Lifetime);
 
     await app.RunAsync();
 
     return 0;
 }
-catch (Exception ex)
+catch (Exception e)
 {
-    Log.Fatal(ex, "Unhandled exception");
+    Log.Fatal(e, "Unhandled exception");
     return 1;
 }
 finally
