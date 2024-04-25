@@ -1,35 +1,108 @@
+using Consul;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Consul;
-using Microsoft.Extensions.Hosting;
 
-namespace Infrastructure.ServiceDiscovery
+namespace Infrastructure.ServiceDiscovery;
+
+public class ServiceDiscoveryHostedService(IConsulClient client, IOptions<ServiceConfigOptions> config, ILogger<ServiceDiscoveryHostedService> logger, IServer server, IApplicationLifetime lifetime) : IHostedService
 {
-    public class ServiceDiscoveryHostedService(IConsulClient client, ServiceConfig config) : IHostedService
+    private readonly IApplicationLifetime _applicationLifetime = lifetime;
+    private CancellationTokenSource _cts;
+    private readonly IOptions<ServiceConfigOptions> _consulConfig = config;
+    private readonly ILogger<ServiceDiscoveryHostedService> _logger = logger;
+    private readonly IServer _server = server;
+
+    private readonly IConsulClient _client = client;
+    private string _registrationId;
+
+    public static string[] Tags { get; set; }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        private readonly IConsulClient _client = client;
-        private readonly ServiceConfig _config = config;
-        private string _registrationId;
+        // Create a linked token so we can trigger cancellation outside of this token's cancellation
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            _registrationId = $"{_config.ServiceName}-{_config.ServiceId}";
+        _logger.LogInformation("before application has started");
 
-            var registration = new AgentServiceRegistration
-            {
-                ID = _registrationId,
-                Name = _config.ServiceName,
-                Address = _config.ServiceAddress.Host,
-                Port = _config.ServiceAddress.Port
-            };
+        _applicationLifetime.ApplicationStarted.Register(
+              async () =>
+              {
+                  Console.WriteLine($"Addresses after application has started: {GetAddresses()}");
+                  Uri uri;
+                  if (_consulConfig.Value.UseServiceSettings)
+                  {
+                      uri = new Uri($"{_consulConfig.Value.ServiceHost}:{_consulConfig.Value.ServicePort}");
+                  }
+                  else
+                  {
+                      var features = _server.Features;
+                      var addresses = features.Get<IServerAddressesFeature>();
+                      var address = addresses.Addresses.First();
+                      uri = new Uri(address);
+                  }
 
-            await _client.Agent.ServiceDeregister(registration.ID, cancellationToken);
-            await _client.Agent.ServiceRegister(registration, cancellationToken);
-        }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+
+
+                  _registrationId = $"{_consulConfig.Value.ServiceId}"; //-{uri.Port}
+
+                  var registration = new AgentServiceRegistration
+                  {
+                      ID = _registrationId,
+                      Name = _consulConfig.Value.ServiceName,
+                      Address = _consulConfig.Value.ServiceHost,
+                      Port = _consulConfig.Value.ServicePort,
+                      Tags = Tags,
+                      Check = new AgentServiceCheck()
+                      {
+                          HTTP = $"{uri.Scheme}://{uri.Host}:{uri.Port}/{_consulConfig.Value.HealthCheckUrlSegment}",
+                          Interval = TimeSpan.FromSeconds(_consulConfig.Value.HealthCheckIntervalSeconds),
+                          Timeout = TimeSpan.FromSeconds(_consulConfig.Value.HealthCheckTimeoutSeconds),
+                          DeregisterCriticalServiceAfter = TimeSpan.FromSeconds(30),
+                      }
+                  };
+
+                  _logger.LogInformation($"Registering service with Consul: {registration.Name}");
+                  await _client.Agent.ServiceDeregister(registration.ID, _cts.Token);
+                  await _client.Agent.ServiceRegister(registration, _cts.Token);
+              }
+              );
+
+        _logger.LogInformation("after application has started");
+
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        _cts.Cancel();
+        _logger.LogInformation($"Deregistering service from Consul: {_registrationId}");
+        try
         {
             await _client.Agent.ServiceDeregister(_registrationId, cancellationToken);
         }
+        catch (Exception e)
+        {
+            _logger.LogError(e, $"Deregistration failed");
+        }
+    }
+
+    private string GetAddresses()
+    {
+        var addresses = _server.Features.Get<IServerAddressesFeature>().Addresses;
+        return string.Join(", ", addresses);
+    }
+
+    private Task WaitForApplicationStartedAsync()
+    {
+        var completionSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _applicationLifetime.ApplicationStarted.Register(() => completionSource.TrySetResult());
+        return completionSource.Task;
     }
 }

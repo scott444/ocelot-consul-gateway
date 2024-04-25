@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Extensions\ConsulExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="asp.versioning.http" Version="8.1.0" />
     <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
@@ -39,7 +43,10 @@
 
   <ItemGroup>
     <Folder Include="Middleware\" />
-    <Folder Include="NewFolder\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\common\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

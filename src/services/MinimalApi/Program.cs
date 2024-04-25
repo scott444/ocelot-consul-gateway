@@ -1,12 +1,10 @@
 using Asp.Versioning;
 using Asp.Versioning.Builder;
 using Carter;
-using Consul;
 using FluentValidation;
+using Infrastructure.ServiceDiscovery;
 using Microsoft.EntityFrameworkCore;
 using MinimalApi.Database;
-using MinimalApi.Extensions;
-using MinimalApi.Infrastructure;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates.Themes;
@@ -48,14 +46,15 @@ try
     builder.Services.AddHealthChecks();
     // Service Discovery
 
-    //var consulConfig = builder.Configuration.GetSection("ConsulConfig").Get<ConsulConfig>();
+    var consulConfig = builder.Configuration.GetSection("Consul").Get<ServiceConfigOptions>();
     //  builder.Services.AddSingleton<IHostedService, ConsulHostedService>();
-    builder.Services.Configure<ConsulConfig>(builder.Configuration.GetSection("ConsulConfig"));
-    builder.Services.AddSingleton<IConsulClient, ConsulClient>(p => new ConsulClient(consulConfig =>
-    {
-        var address = builder.Configuration["consulConfig:address"];
-        consulConfig.Address = new Uri(address);
-    }));
+    builder.Services.Configure<ServiceConfigOptions>(builder.Configuration.GetSection("ConsulConfig"));
+    builder.Services.RegisterConsulServices(consulConfig?.ServiceDiscoveryAddress);
+    //builder.Services.AddSingleton<IConsulClient, ConsulClient>(p => new ConsulClient(consulConfig =>
+    //{
+    //    var address = builder.Configuration["consulConfig:ServiceDiscoveryAddress"];
+    //    consulConfig.Address = new Uri(address);
+    //}));
 
     builder.Services.AddCors(options =>
     {
@@ -72,6 +71,11 @@ try
     });
 
     builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+    ServiceDiscoveryHostedService.Tags = [MinimalApi.Tags.Customer, MinimalApi.Tags.Weather];
+
+    var serviceConfig = builder.Configuration.GetSection("consul");
+    builder.Services.Configure<ServiceConfigOptions>(serviceConfig);
+    builder.Services.RegisterConsulServices(serviceConfig.Get<ServiceConfigOptions>()?.ServiceDiscoveryAddress);
 
     builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("Database")));
 
@@ -122,11 +126,11 @@ try
         app.UseSwaggerUI();
     }
 
-    //app.UseHttpsRedirection();
-    app.UseHealthChecks("/healthcheck");
+    //app.UseHttpsRedirection(); //this messes up consul
+    Log.Information(serviceConfig.Get<ServiceConfigOptions>()?.HealthCheckUrlSegment);
+    app.UseHealthChecks($"/{serviceConfig.Get<ServiceConfigOptions>()?.HealthCheckUrlSegment}");
     //app.UseAuthorization();    
-    Log.Information("Registering to Consul");
-    app.RegisterWithConsul(app.Lifetime);
+    //app.RegisterWithConsul(app.Lifetime);
 
     await app.RunAsync();
 

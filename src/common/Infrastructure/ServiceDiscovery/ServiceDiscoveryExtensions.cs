@@ -1,29 +1,20 @@
-using System;
 using Consul;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 
 namespace Infrastructure.ServiceDiscovery
 {
     public static class ServiceDiscoveryExtensions
     {
-        public static void RegisterConsulServices(this IServiceCollection services, ServiceConfig serviceConfig)
+        public static void RegisterConsulServices(this IServiceCollection services, string address)
         {
-            ArgumentNullException.ThrowIfNull(serviceConfig);
-
-            var consulClient = CreateConsulClient(serviceConfig);
-
-            services.AddSingleton(serviceConfig);
+            ConsulClient consulClient = new(config =>
+            {
+                config.Address = new Uri(address);
+            });
             services.AddSingleton<IHostedService, ServiceDiscoveryHostedService>();
             services.AddSingleton<IConsulClient, ConsulClient>(p => consulClient);
-        }
-
-        private static ConsulClient CreateConsulClient(ServiceConfig serviceConfig)
-        {
-            return new ConsulClient(config =>
-            {
-                config.Address = serviceConfig.ServiceDiscoveryAddress;
-            });
         }
     }
 }
