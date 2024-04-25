@@ -14,9 +14,13 @@ namespace ApiGateway
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args)
-                .UseKestrel()
-                .UseContentRoot(Directory.GetCurrentDirectory())
+            CreateHostBuilder(args).Build().Run();
+        }
+
+        public static IWebHostBuilder CreateHostBuilder(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
+                .UseContentRoot(Directory.GetCurrentDirectory())                
+                .UseStartup<Startup>()
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     config
@@ -26,23 +30,13 @@ namespace ApiGateway
                         .AddJsonFile($"ocelot.{hostingContext.HostingEnvironment.EnvironmentName}.json")
                         .AddEnvironmentVariables();
                 })
-                .ConfigureServices(s => {
-                    s.AddOcelot().AddConsul();
-                })
                 .ConfigureLogging((hostingContext, logging) =>
                 {
                     logging.AddConsole();
-                })
-                .UseIISIntegration()
-                .Configure(app =>
-                {
-                    app.UseOcelot().Wait();
-                })
-                .Build().Run();
-        }
-
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+                    //logging.AddConfiguration(builderContext.Configuration.GetSection("Logging"));
+                    //logging.AddConsole();
+                    //logging.AddDebug();
+                    //logging.AddEventSourceLogger();
+                });
     }
 }

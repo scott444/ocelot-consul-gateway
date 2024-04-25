@@ -6,11 +6,11 @@ EXPOSE 80
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /
-COPY ["./src/gateways/ApiGateway/ApiGateway.csproj", "/src/gateways/ApiGateway/"]
-RUN dotnet restore "./src/gateways/ApiGateway/ApiGateway.csproj"
+WORKDIR /src
+COPY ["src/gateways/ApiGateway/ApiGateway.csproj", "src/gateways/ApiGateway/"]
+RUN dotnet restore "src/gateways/ApiGateway/ApiGateway.csproj"
 COPY . .
-WORKDIR "/src/gateways/ApiGateway/"
+WORKDIR "/src/src/gateways/ApiGateway/"
 RUN dotnet build "ApiGateway.csproj" -c Release -o /app/build
 
 FROM build AS publish
