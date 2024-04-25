@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\All.ServiceDefaults\All.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\common\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 

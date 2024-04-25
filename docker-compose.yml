@@ -2,6 +2,21 @@ version: '3.4'
 
 services:
 
+  minimalapi:
+    image: minimalapi:latest
+    build:
+      context: .
+      dockerfile: src/services/MinimalApi/Dockerfile
+    container_name: minimalapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ServiceConfig__serviceDiscoveryAddress=http://consul:8500
+      - ServiceConfig__serviceAddress=http://minimalapi:8080
+      - ServiceConfig__serviceName=minimalapi
+      - ServiceConfig__serviceId=minimalapi-v1
+    ports:
+      - "7082:8080"
+
   sampleapi:
     image: sampleapi:latest
     build:
@@ -11,11 +26,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ServiceConfig__serviceDiscoveryAddress=http://consul:8500
-      - ServiceConfig__serviceAddress=http://sampleapi:80
+      - ServiceConfig__serviceAddress=http://sampleapi:8080
       - ServiceConfig__serviceName=sampleapi
       - ServiceConfig__serviceId=sampleapi-v1
     ports:
-      - "7081:80"
+      - "7081:8080"
 
   api.gateway:
     image: apigateway:latest
@@ -26,7 +41,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=development
     ports:
-      - "7080:80"
+      - "7080:8080"
 
   consul:
     image: hashicorp/consul:latest

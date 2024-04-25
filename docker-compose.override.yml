@@ -6,17 +6,17 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ServiceConfig__serviceDiscoveryAddress=http://consul:8500
-      - ServiceConfig__serviceAddress=http://sampleapi:80
+      - ServiceConfig__serviceAddress=http://sampleapi:8080
       - ServiceConfig__serviceName=sampleapi
       - ServiceConfig__serviceId=sampleapi-v1
     ports:
-      - "80"
+      - "7081:8080"
       
   api.gateway:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
-      - "80:80"
+      - "80:8080"
   
   consul:
     ports:
